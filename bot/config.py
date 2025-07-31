@@ -5,7 +5,8 @@ from apscheduler.schedulers.asyncio import AsyncIOScheduler
 
 
 extensions = [
-    "bot.cogs.alerts"
+    "bot.cogs.alerts",
+    "bot.cogs.config_commands" # New cog for config management
 ]
 
 class Bot(commands.Bot):
@@ -36,6 +37,10 @@ class Bot(commands.Bot):
 def load_config():
     with open("config.json", "r") as f:
         return  json.load(f)
+
+def save_config(config_data):
+    with open("config.json", "w") as f:
+        json.dump(config_data, f, indent=2)
 
 CONFIG = load_config()
     

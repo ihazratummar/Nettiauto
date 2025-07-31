@@ -15,38 +15,19 @@ from bot.utils import scrape_listings, match_filters
 def scrap_website(url: str):
     print("Start Scrapping")
     options = webdriver.ChromeOptions()
-    # options.add_argument("--headless")
+    options.add_argument("--headless=new") # Use new headless mode
     options.add_argument("--no-sandbox")
     options.add_argument("--disable-dev-shm-usage")
+    options.add_argument("--disable-blink-features=AutomationControlled") # Disable automation detection
+    options.add_experimental_option("excludeSwitches", ["enable-automation"]) # Disable automation info bar
+    options.add_experimental_option("useAutomationExtension", False) # Disable automation extension
+    options.add_argument("user-agent=Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/115.0.0.0 Safari/537.36") # Set a common user-agent
 
     with webdriver.Chrome(options=options) as driver:
+        driver.implicitly_wait(10) # Implicitly wait for elements to appear
         driver.get(url)
-        print("Waiting for Cloudflare challenge...")
-        
-        try:
-            # Wait for the iframe to be available and switch to it
-            WebDriverWait(driver, 20).until(
-                EC.frame_to_be_available_and_switch_to_it((By.XPATH, "//iframe[starts-with(@src, 'https://challenges.cloudflare.com')]"))
-            )
-            
-            # Wait for the checkbox to be clickable and click it
-            checkbox = WebDriverWait(driver, 20).until(
-                EC.element_to_be_clickable((By.CSS_SELECTOR, "label.ctp-checkbox-label > input[type='checkbox']"))
-            )
-            checkbox.click()
-            
-            print("Clicked the Cloudflare checkbox.")
-            
-            # Switch back to the main content
-            driver.switch_to.default_content()
-            
-            # Wait for the redirect to complete
-            WebDriverWait(driver, 20).until(
-                EC.presence_of_element_located((By.CSS_SELECTOR, "body:not(.no-js)"))
-            )
-
-        except Exception as e:
-            print(f"Could not find or click the Cloudflare checkbox: {e}")
+        print("Waiting for page to load and Cloudflare to resolve...")
+        time.sleep(15) # Give extra time for JavaScript to execute
 
         html = driver.page_source
 
