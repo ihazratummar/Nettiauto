@@ -13,7 +13,8 @@
       "km_max" : 250000,
       "engine_size_min": 0.8,
       "engine_size_max": 1.8,
-      "engine_type": ["bensiini", "diesel"]
+      "engine_type": ["bensiini", "diesel"],
+      "location" : ["Salo", "Pori", "Kaarina", "Vantaa"]
     },
     "check_interval" : 300
   }
