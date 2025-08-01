@@ -20,7 +20,7 @@ class ConfigCommands(commands.Cog):
     @app_commands.command(name="show_config", description="Shows the current configuration for this server.")
     @app_commands.checks.has_permissions(manage_guild=True)
     async def show_config(self, interaction: discord.Interaction):
-        await interaction.response.defer(ephemeral=True)
+        await interaction.response.defer()
         guild_id = str(interaction.guild_id)
         guild_config = await self.get_guild_config(guild_id)
 

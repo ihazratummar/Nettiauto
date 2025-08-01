@@ -1,15 +1,12 @@
-import time
 import json
+import time
+
 import discord
 from discord.ext import commands
 from selenium import webdriver
-from selenium.webdriver.common.by import By
-from selenium.webdriver.support.ui import WebDriverWait
-from selenium.webdriver.support import expected_conditions as EC
 
 from bot.config import load_config
 from bot.utils import scrape_listings, match_filters
-
 
 
 def scrap_website(url: str):

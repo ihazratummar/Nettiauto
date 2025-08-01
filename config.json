@@ -25,5 +25,32 @@
       ]
     },
     "check_interval": 300
+  },
+  "939185624748007504": {
+    "channel_id": 1400472776254689491,
+    "urls": [
+      "https://www.nettiauto.com/hakutulokset?haku=P370664342"
+    ],
+    "filters": {
+      "year_min": 2000.0,
+      "year_max": 2015.0,
+      "price_min": 300,
+      "price_max": 1300,
+      "km_min": 50000,
+      "km_max": 250000,
+      "engine_size_min": 0.8,
+      "engine_size_max": 1.8,
+      "engine_type": [
+        "bensiini",
+        "diesel"
+      ],
+      "location": [
+        "Salo",
+        "Pori",
+        "Kaarina",
+        "Vantaa"
+      ]
+    },
+    "check_interval": 300
   }
 }
