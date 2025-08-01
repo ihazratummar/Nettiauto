@@ -4,7 +4,7 @@ import time
 import discord
 from discord.ext import commands
 from selenium import webdriver
-
+# from selenium.webdriver.chrome.service import Service
 from bot.config import load_config
 from bot.utils import scrape_listings, match_filters
 
@@ -12,25 +12,37 @@ from bot.utils import scrape_listings, match_filters
 def scrap_website(url: str):
     print("Start Scrapping")
     options = webdriver.ChromeOptions()
-    options.add_argument("--headless=new") # Use new headless mode
+    options.add_argument("--headless=new")
     options.add_argument("--no-sandbox")
     options.add_argument("--disable-dev-shm-usage")
-    options.add_argument("--disable-blink-features=AutomationControlled") # Disable automation detection
-    options.add_experimental_option("excludeSwitches", ["enable-automation"]) # Disable automation info bar
-    options.add_experimental_option("useAutomationExtension", False) # Disable automation extension
-    options.add_argument("user-agent=Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/115.0.0.0 Safari/537.36") # Set a common user-agent
+    options.add_argument("--disable-blink-features=AutomationControlled")
+    options.add_experimental_option("excludeSwitches", ["enable-automation"])
+    options.add_experimental_option("useAutomationExtension", False)
+    options.add_argument(
+        "user-agent=Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/115.0.0.0 Safari/537.36")
 
-    with webdriver.Chrome(options=options) as driver:
-        driver.implicitly_wait(10) # Implicitly wait for elements to appear
-        driver.get(url)
-        print("Waiting for page to load and Cloudflare to resolve...")
-        time.sleep(15) # Give extra time for JavaScript to execute
+    # service = Service('/usr/bin/chromedriver')
 
-        html = driver.page_source
+    try:
+        # with webdriver.Chrome(service=service, options=options) as driver:
+        with webdriver.Chrome(options=options) as driver:
+            driver.implicitly_wait(10)
+            driver.get(url)
+            print("Waiting for page to load and Cloudflare to resolve...")
+            time.sleep(15)
 
-    print("Start Scrapping HTML")
-    list_car = scrape_listings(html)
-    return list_car
+            html = driver.page_source
+
+        # ⚠️ Check for Cloudflare block or error page
+        if "cf-browser-verification" in html or "Attention Required!" in html or "Access denied" in html:
+            return "Blocked by Cloudflare or site returned error page."
+
+        print("Start Scrapping HTML")
+        return scrape_listings(html)
+
+    except Exception as e:
+        print(f"Error during scraping: {e}")
+        return f"Scraping error: {e}"
 
 
 class Alerts(commands.Cog):
@@ -61,6 +73,8 @@ class Alerts(commands.Cog):
 
             if isinstance(result, str):  # This means it’s an error message
                 print(result)
+                await self.send_log(guild_config, f"Error scraping {url}: {result}")
+                continue
             else:
                 new_listings = []
                 for car in result:
@@ -68,6 +82,10 @@ class Alerts(commands.Cog):
                     if car['link'] not in seen_listings and match_filters(car, filters):
                         new_listings.append(car)
                         seen_listings.append(car['link'])
+
+                if not new_listings:
+                    await self.send_log(guild_config, f"ℹ️ No new listings matched filters for `{url}`.")
+                    continue
 
                 channel_id = guild_config["channel_id"]
                 channel = self.bot.get_channel(channel_id)
@@ -98,9 +116,23 @@ class Alerts(commands.Cog):
         guild_id = str(ctx.guild.id)
         if guild_id in self.config:
             await self.scheduled_scrap(guild_id, self.config[guild_id])
-            await ctx.send(f"Manual scrap initiated for this server. Check {self.bot.get_channel(self.config[guild_id]["channel_id"]).mention} for updates.")
+            await ctx.send(
+                f"Manual scrap initiated for this server. Check {self.bot.get_channel(self.config[guild_id]["channel_id"]).mention} for updates.")
         else:
             await ctx.send("No configuration found for this server.")
+
+    async def send_log(self, guild_config: dict, message: str):
+        log_channel_id = guild_config.get("log_channel_id")
+        if not log_channel_id:
+            print("No log channel configured.")
+            return
+
+        log_channel = self.bot.get_channel(log_channel_id)
+        if log_channel:
+            try:
+                await log_channel.send(f"📛 **Alert:** {message}")
+            except Exception as e:
+                print(f"Failed to send log message: {e}")
 
 
 async def setup(bot: commands.Bot):

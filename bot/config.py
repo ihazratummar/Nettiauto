@@ -3,15 +3,15 @@ from discord.ext import commands
 import json
 from apscheduler.schedulers.asyncio import AsyncIOScheduler
 
-
 extensions = [
     "bot.cogs.alerts",
-    "bot.cogs.config_commands" # New cog for config management
+    "bot.cogs.config_commands"  # New cog for config management
 ]
 
+
 class Bot(commands.Bot):
-    def __init__(self, command_prefix: str, intents : discord.Intents, **kwargs):
-        super().__init__(command_prefix= command_prefix, intents= intents, **kwargs)
+    def __init__(self, command_prefix: str, intents: discord.Intents, **kwargs):
+        super().__init__(command_prefix=command_prefix, intents=intents, **kwargs)
         self.scheduler = AsyncIOScheduler()
 
     async def on_ready(self):
@@ -23,7 +23,12 @@ class Bot(commands.Bot):
         print(f"Synced {len(tree)} commands")
 
         # Schedule the scraping task
-        self.scheduler.add_job(self.scheduled_scraping, 'interval', hours=1)
+        self.scheduler.add_job(
+            self.scheduled_scraping,
+            'interval',
+            seconds=10,
+            max_instances=10  # or higher if safe
+        )
         self.scheduler.start()
         print("Scheduler started.")
 
@@ -34,13 +39,15 @@ class Bot(commands.Bot):
             if alerts_cog:
                 await alerts_cog.scheduled_scrap(guild_id, guild_config)
 
+
 def load_config():
     with open("config.json", "r") as f:
-        return  json.load(f)
+        return json.load(f)
+
 
 def save_config(config_data):
     with open("config.json", "w") as f:
         json.dump(config_data, f, indent=2)
 
+
 CONFIG = load_config()
-    

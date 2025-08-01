@@ -4,6 +4,7 @@ from discord import app_commands
 
 from bot.config import load_config, save_config
 
+
 class ConfigCommands(commands.Cog):
     def __init__(self, bot: commands.Bot):
         self.bot = bot
@@ -34,7 +35,8 @@ class ConfigCommands(commands.Cog):
         channel_id = guild_config.get("channel_id")
         if channel_id:
             channel = self.bot.get_channel(channel_id)
-            embed.add_field(name="Notification Channel", value=channel.mention if channel else f"ID: {channel_id}", inline=False)
+            embed.add_field(name="Notification Channel", value=channel.mention if channel else f"ID: {channel_id}",
+                            inline=False)
 
         # URLs
         urls = guild_config.get("urls", [])
@@ -100,14 +102,16 @@ class ConfigCommands(commands.Cog):
         else:
             await interaction.followup.send(f"URL `{url}` not found.")
 
-    @app_commands.command(name="set_filter_range", description="Sets min/max values for a filter (e.g., year, price, km, engine_size).")
+    @app_commands.command(name="set_filter_range",
+                          description="Sets min/max values for a filter (e.g., year, price, km, engine_size).")
     @app_commands.describe(
         filter_name="The name of the filter (e.g., year, price, km, engine_size)",
         min_value="The minimum value",
         max_value="The maximum value"
     )
     @app_commands.checks.has_permissions(manage_guild=True)
-    async def set_filter_range(self, interaction: discord.Interaction, filter_name: str, min_value: float, max_value: float):
+    async def set_filter_range(self, interaction: discord.Interaction, filter_name: str, min_value: float,
+                               max_value: float):
         await interaction.response.defer(ephemeral=True)
         guild_id = str(interaction.guild_id)
         guild_config = await self.get_guild_config(guild_id)
@@ -123,7 +127,8 @@ class ConfigCommands(commands.Cog):
         await self.save_guild_config(guild_id, guild_config)
         await interaction.followup.send(f"Filter `{filter_name}` set to min: `{min_value}`, max: `{max_value}`.")
 
-    @app_commands.command(name="add_filter_item", description="Adds an item to a list filter (e.g., engine_type, location).")
+    @app_commands.command(name="add_filter_item",
+                          description="Adds an item to a list filter (e.g., engine_type, location).")
     @app_commands.describe(
         filter_name="The name of the filter (e.g., engine_type, location)",
         item="The item to add"
@@ -141,7 +146,7 @@ class ConfigCommands(commands.Cog):
 
         if filter_name not in filters:
             filters[filter_name] = []
-        
+
         if item not in filters[filter_name]:
             filters[filter_name].append(item)
             guild_config["filters"] = filters
@@ -150,7 +155,8 @@ class ConfigCommands(commands.Cog):
         else:
             await interaction.followup.send(f"Item `{item}` already exists in `{filter_name}` filter.")
 
-    @app_commands.command(name="remove_filter_item", description="Removes an item from a list filter (e.g., engine_type, location).")
+    @app_commands.command(name="remove_filter_item",
+                          description="Removes an item from a list filter (e.g., engine_type, location).")
     @app_commands.describe(
         filter_name="The name of the filter (e.g., engine_type, location)",
         item="The item to remove"
@@ -185,6 +191,17 @@ class ConfigCommands(commands.Cog):
         await self.save_guild_config(guild_id, guild_config)
         await interaction.followup.send(f"Check interval set to `{interval}` seconds.")
 
+    @app_commands.command(name="log_channel", description="Sets the channel for logging errors and notifications.")
+    @app_commands.describe(channel="The channel to send logs to.")
+    @app_commands.checks.has_permissions(manage_guild=True)
+    async def set_log_channel(self, interaction: discord.Interaction, channel: discord.TextChannel):
+        await interaction.response.defer(ephemeral=True)
+        guild_id = str(interaction.guild_id)
+        guild_config = await self.get_guild_config(guild_id)
+        guild_config["log_channel_id"] = channel.id
+        await self.save_guild_config(guild_id, guild_config)
+        await interaction.followup.send(f"Log channel set to {channel.mention}.")
+
     @show_config.error
     @set_channel.error
     @add_url.error
@@ -195,9 +212,12 @@ class ConfigCommands(commands.Cog):
     @set_interval.error
     async def on_command_error(self, interaction: discord.Interaction, error: app_commands.AppCommandError):
         if isinstance(error, app_commands.MissingPermissions):
-            await interaction.response.send_message("You don't have the necessary permissions to use this command. You need `Manage Guild` permission.", ephemeral=True)
+            await interaction.response.send_message(
+                "You don't have the necessary permissions to use this command. You need `Manage Guild` permission.",
+                ephemeral=True)
         else:
             await interaction.response.send_message(f"An error occurred: {error}", ephemeral=True)
+
 
 async def setup(bot: commands.Bot):
     await bot.add_cog(ConfigCommands(bot=bot))
