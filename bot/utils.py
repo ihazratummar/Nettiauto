@@ -72,15 +72,19 @@ def scrape_listings(html_content):
     soup = BeautifulSoup(html_content, "html.parser")
     listings = []
     listing_data = soup.find(id="listingData")
-    if listing_data:
-        ads = listing_data.select("div.product-card")
-        for ad in ads:
+    if not listing_data:
+        print("No listing data found on the page.")
+        return listings
+
+    ads = listing_data.select("div.product-card")
+    for ad in ads:
             title_element = ad.select_one(".product-card__title")
             title = title_element.get_text(strip=True) if title_element else "N/A"
 
             price_element = ad.select_one(".product-card__price-main")
             price_text = price_element.get_text(strip=True) if price_element else "0"
-            price = int(re.sub(r'[\s€]', '', price_text)) if price_text.replace("€", "").strip().isdigit() else 0
+            price_cleaned = re.sub(r'[\s€]', '', price_text)
+            price = int(price_cleaned) if price_cleaned.isdigit() else 0
 
             link_element = ad.select_one("a.product-card-link__tricky-link")
             link = link_element.get("href") if link_element else "N/A"
@@ -102,7 +106,8 @@ def scrape_listings(html_content):
                 year = int(year_text) if year_text.isdigit() else 0
 
                 km_text = basic_info.find_all("span")[1].get_text(strip=True)
-                km = int(re.sub(r'[^\d]', '', km_text)) if km_text else 0
+                km_cleaned = re.sub(r'[^\d]', '', km_text)
+                km = int(km_cleaned) if km_cleaned.isdigit() else 0
                 
                 engine_type = basic_info.find_all("span")[2].get_text(strip=True).replace('●', '').strip()
             else:

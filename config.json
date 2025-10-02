@@ -2,9 +2,6 @@
   "939185624748007504": {
     "channel_id": 1400472776254689491,
     "log_channel_id": 1400847390277107832,
-    "urls": [
-      "https://www.nettiauto.com/hakutulokset?haku=P370664342"
-    ],
     "filters": {
       "year_min": 2000.0,
       "year_max": 2015.0,
@@ -27,5 +24,12 @@
       ]
     },
     "check_interval": 300
+  },
+  "1126486185947189318": {
+    "urls": [
+      "https://www.nettiauto.com/hakutulokset?haku=P1619454637"
+    ],
+    "channel_id": 1423254517863944202,
+    "log_channel_id": 1423254611002785863
   }
 }

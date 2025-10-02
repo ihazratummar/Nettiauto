@@ -4,6 +4,7 @@ import time
 import discord
 from discord.ext import commands
 from selenium import webdriver
+
 # from selenium.webdriver.chrome.service import Service
 from bot.config import load_config
 from bot.utils import scrape_listings, match_filters
@@ -45,12 +46,34 @@ def scrap_website(url: str):
         return f"Scraping error: {e}"
 
 
+from apscheduler.schedulers.asyncio import AsyncIOScheduler
+
+
 class Alerts(commands.Cog):
     def __init__(self, bot: commands.Bot):
         self.bot = bot
         self.config = load_config()
         self.seen_listings_file = "seen_listings.json"
-        self.bot
+        self.scheduler = AsyncIOScheduler()
+
+    async def cog_load(self):
+        self.scheduler.add_job(self.scheduled_scraping, 'interval', seconds=10, max_instances=10)
+        self.scheduler.start()
+        print("Scheduler started in Alerts cog.")
+
+    def cog_unload(self):
+        self.scheduler.shutdown()
+
+    def reload_config(self):
+        self.config = load_config()
+        print("Alerts cog reloaded its configuration.")
+
+
+
+    async def scheduled_scraping(self):
+        print("Running scheduled scraping...")
+        for guild_id, guild_config in self.config.items():
+            await self.scheduled_scrap(guild_id, guild_config)
 
     def load_seen_listings(self):
         try:
@@ -102,6 +125,7 @@ class Alerts(commands.Cog):
 
                         try:
                             await channel.send(embed=embed)
+                            time.sleep(5)  # Add a 2-second delay to avoid rate limiting
                         except discord.RateLimited:
                             print("Discord Rate Limit")
                             time.sleep(300)

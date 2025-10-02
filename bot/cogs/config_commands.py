@@ -68,6 +68,11 @@ class ConfigCommands(commands.Cog):
         guild_config = await self.get_guild_config(guild_id)
         guild_config["channel_id"] = channel.id
         await self.save_guild_config(guild_id, guild_config)
+
+        alerts_cog = self.bot.get_cog("Alerts")
+        if alerts_cog:
+            alerts_cog.reload_config()
+
         await interaction.followup.send(f"Notification channel set to {channel.mention}.")
 
     @app_commands.command(name="add_url", description="Adds a URL to scrape.")
@@ -82,6 +87,11 @@ class ConfigCommands(commands.Cog):
             urls.append(url)
             guild_config["urls"] = urls
             await self.save_guild_config(guild_id, guild_config)
+
+            alerts_cog = self.bot.get_cog("Alerts")
+            if alerts_cog:
+                alerts_cog.reload_config()
+
             await interaction.followup.send(f"URL `{url}` added.")
         else:
             await interaction.followup.send(f"URL `{url}` already exists.")
@@ -98,6 +108,11 @@ class ConfigCommands(commands.Cog):
             urls.remove(url)
             guild_config["urls"] = urls
             await self.save_guild_config(guild_id, guild_config)
+
+            alerts_cog = self.bot.get_cog("Alerts")
+            if alerts_cog:
+                alerts_cog.reload_config()
+
             await interaction.followup.send(f"URL `{url}` removed.")
         else:
             await interaction.followup.send(f"URL `{url}` not found.")
@@ -125,6 +140,11 @@ class ConfigCommands(commands.Cog):
         filters[f"{filter_name}_max"] = max_value
         guild_config["filters"] = filters
         await self.save_guild_config(guild_id, guild_config)
+
+        alerts_cog = self.bot.get_cog("Alerts")
+        if alerts_cog:
+            alerts_cog.reload_config()
+
         await interaction.followup.send(f"Filter `{filter_name}` set to min: `{min_value}`, max: `{max_value}`.")
 
     @app_commands.command(name="add_filter_item",
@@ -151,6 +171,11 @@ class ConfigCommands(commands.Cog):
             filters[filter_name].append(item)
             guild_config["filters"] = filters
             await self.save_guild_config(guild_id, guild_config)
+
+            alerts_cog = self.bot.get_cog("Alerts")
+            if alerts_cog:
+                alerts_cog.reload_config()
+
             await interaction.followup.send(f"Item `{item}` added to `{filter_name}` filter.")
         else:
             await interaction.followup.send(f"Item `{item}` already exists in `{filter_name}` filter.")
@@ -176,6 +201,11 @@ class ConfigCommands(commands.Cog):
             filters[filter_name].remove(item)
             guild_config["filters"] = filters
             await self.save_guild_config(guild_id, guild_config)
+
+            alerts_cog = self.bot.get_cog("Alerts")
+            if alerts_cog:
+                alerts_cog.reload_config()
+
             await interaction.followup.send(f"Item `{item}` removed from `{filter_name}` filter.")
         else:
             await interaction.followup.send(f"Item `{item}` not found in `{filter_name}` filter.")
@@ -189,6 +219,11 @@ class ConfigCommands(commands.Cog):
         guild_config = await self.get_guild_config(guild_id)
         guild_config["check_interval"] = interval
         await self.save_guild_config(guild_id, guild_config)
+
+        alerts_cog = self.bot.get_cog("Alerts")
+        if alerts_cog:
+            alerts_cog.reload_config()
+
         await interaction.followup.send(f"Check interval set to `{interval}` seconds.")
 
     @app_commands.command(name="log_channel", description="Sets the channel for logging errors and notifications.")
@@ -200,6 +235,11 @@ class ConfigCommands(commands.Cog):
         guild_config = await self.get_guild_config(guild_id)
         guild_config["log_channel_id"] = channel.id
         await self.save_guild_config(guild_id, guild_config)
+
+        alerts_cog = self.bot.get_cog("Alerts")
+        if alerts_cog:
+            alerts_cog.reload_config()
+
         await interaction.followup.send(f"Log channel set to {channel.mention}.")
 
     @show_config.error

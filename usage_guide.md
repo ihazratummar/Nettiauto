@@ -98,10 +98,10 @@ These commands allow server administrators to customize what cars the bot search
     *   `/remove_filter_item filter_name: engine_type item: Diesel`
     *   `/remove_filter_item filter_name: location item: Helsinki`
 
-### 8. `/set_interval`
-*   **Description:** Sets how often the bot automatically checks for new listings (in seconds).
-*   **Usage:** `/set_interval interval: <seconds>`
-*   **Example:** `/set_interval interval: 3600` (for every 1 hour)
+### 8. `/log_channel`
+* **Description:** Set a log channel for bots logs.
+* **Usage:** `log_channel <channel_name>`
+* **Example:** `log_channel #log_channel`
 
 ---
 
