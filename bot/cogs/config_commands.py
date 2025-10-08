@@ -10,13 +10,13 @@ class ConfigCommands(commands.Cog):
         self.bot = bot
 
     async def get_guild_config(self, guild_id: str):
-        config = load_config()
+        config = await load_config()
         return config.get(guild_id, {})
 
     async def save_guild_config(self, guild_id: str, guild_config: dict):
-        config = load_config()
+        config = await load_config()
         config[guild_id] = guild_config
-        save_config(config)
+        await save_config(config)
 
     @app_commands.command(name="show_config", description="Shows the current configuration for this server.")
     @app_commands.checks.has_permissions(manage_guild=True)
@@ -71,7 +71,7 @@ class ConfigCommands(commands.Cog):
 
         alerts_cog = self.bot.get_cog("Alerts")
         if alerts_cog:
-            alerts_cog.reload_config()
+            await alerts_cog.reload_config()
 
         await interaction.followup.send(f"Notification channel set to {channel.mention}.")
 
@@ -90,7 +90,7 @@ class ConfigCommands(commands.Cog):
 
             alerts_cog = self.bot.get_cog("Alerts")
             if alerts_cog:
-                alerts_cog.reload_config()
+                await alerts_cog.reload_config()
 
             await interaction.followup.send(f"URL `{url}` added.")
         else:
@@ -111,7 +111,7 @@ class ConfigCommands(commands.Cog):
 
             alerts_cog = self.bot.get_cog("Alerts")
             if alerts_cog:
-                alerts_cog.reload_config()
+                await alerts_cog.reload_config()
 
             await interaction.followup.send(f"URL `{url}` removed.")
         else:

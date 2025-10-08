@@ -1,5 +1,5 @@
 import json
-
+import aiofiles
 import discord
 from discord.ext import commands
 
@@ -22,14 +22,14 @@ class Bot(commands.Bot):
         print(f"Synced {len(tree)} commands")
 
 
-def load_config():
-    with open("config.json", "r") as f:
-        return json.load(f)
+async def load_config():
+    async with aiofiles.open("config.json", "r") as f:
+        return json.loads(await f.read())
 
 
-def save_config(config_data):
-    with open("config.json", "w") as f:
-        json.dump(config_data, f, indent=2)
+async def save_config(config_data):
+    async with aiofiles.open("config.json", "w") as f:
+        await f.write(json.dumps(config_data, indent=2))
 
 
 

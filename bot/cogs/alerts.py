@@ -1,3 +1,4 @@
+import asyncio
 import json
 import time
 
@@ -10,7 +11,7 @@ from bot.config import load_config
 from bot.utils import scrape_listings, match_filters
 
 
-def scrap_website(url: str):
+async def scrap_website(url: str):
     print("Start Scrapping")
     options = webdriver.ChromeOptions()
     options.add_argument("--headless=new")
@@ -30,7 +31,7 @@ def scrap_website(url: str):
             driver.implicitly_wait(10)
             driver.get(url)
             print("Waiting for page to load and Cloudflare to resolve...")
-            time.sleep(15)
+            await asyncio.sleep(15)
 
             html = driver.page_source
 
@@ -52,11 +53,15 @@ from apscheduler.schedulers.asyncio import AsyncIOScheduler
 class Alerts(commands.Cog):
     def __init__(self, bot: commands.Bot):
         self.bot = bot
-        self.config = load_config()
+        self.config = {}
         self.seen_listings_file = "seen_listings.json"
         self.scheduler = AsyncIOScheduler()
+        self.scraping_lock = asyncio.Lock()
+        self.seen_listings = set()
 
     async def cog_load(self):
+        self.config = await load_config()
+        self.seen_listings = set(self.load_seen_listings())
         self.scheduler.add_job(self.scheduled_scraping, 'interval', seconds=10, max_instances=10)
         self.scheduler.start()
         print("Scheduler started in Alerts cog.")
@@ -64,16 +69,20 @@ class Alerts(commands.Cog):
     def cog_unload(self):
         self.scheduler.shutdown()
 
-    def reload_config(self):
-        self.config = load_config()
+    async def reload_config(self):
+        self.config = await load_config()
         print("Alerts cog reloaded its configuration.")
 
-
-
     async def scheduled_scraping(self):
-        print("Running scheduled scraping...")
-        for guild_id, guild_config in self.config.items():
-            await self.scheduled_scrap(guild_id, guild_config)
+        if self.scraping_lock.locked():
+            print("Scraping is already in progress. Skipping this run.")
+            return
+
+        async with self.scraping_lock:
+            print("Running scheduled scraping...")
+            self.config = await load_config()
+            for guild_id, guild_config in self.config.items():
+                await self.scheduled_scrap(guild_id, guild_config)
 
     def load_seen_listings(self):
         try:
@@ -82,17 +91,16 @@ class Alerts(commands.Cog):
         except (FileNotFoundError, json.JSONDecodeError):
             return []
 
-    def save_seen_listings(self, listings):
+    def save_seen_listings(self):
         with open(self.seen_listings_file, 'w') as f:
-            json.dump(listings, f, indent=2)
+            json.dump(list(self.seen_listings), f, indent=2)
 
     async def scheduled_scrap(self, guild_id: str, guild_config: dict):
         urls = guild_config.get("urls", [])
         filters = guild_config.get("filters", {})
-        seen_listings = self.load_seen_listings()
 
         for url in urls:
-            result = await self.bot.loop.run_in_executor(None, scrap_website, url)
+            result = await scrap_website(url)
 
             if isinstance(result, str):  # This means it’s an error message
                 print(result)
@@ -102,9 +110,9 @@ class Alerts(commands.Cog):
                 new_listings = []
                 for car in result:
                     print(f"Scraped car: {car}")
-                    if car['link'] not in seen_listings and match_filters(car, filters):
+                    if car['link'] not in self.seen_listings and match_filters(car, filters):
                         new_listings.append(car)
-                        seen_listings.append(car['link'])
+                        self.seen_listings.add(car['link'])
 
                 if not new_listings:
                     await self.send_log(guild_config, f"ℹ️ No new listings matched filters for `{url}`.")
@@ -125,18 +133,17 @@ class Alerts(commands.Cog):
 
                         try:
                             await channel.send(embed=embed)
-                            time.sleep(5)  # Add a 2-second delay to avoid rate limiting
+                            self.save_seen_listings()  # Save after each new listing
+                            await asyncio.sleep(5)  # Use asyncio.sleep
                         except discord.RateLimited:
                             print("Discord Rate Limit")
-                            time.sleep(300)
+                            await asyncio.sleep(300)
 
-                    self.save_seen_listings(seen_listings)
                     print(f"Scraped {len(new_listings)} new matching cars from {url}")
                     print(f"data posted in {channel.mention}")
 
     @commands.hybrid_command(name="scrap")
     async def scrap(self, ctx: commands.Context):
-        await ctx.defer()
         guild_id = str(ctx.guild.id)
         if guild_id in self.config:
             await self.scheduled_scrap(guild_id, self.config[guild_id])
